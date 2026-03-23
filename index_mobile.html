@@ -1,0 +1,905 @@
+
+html_content = '''<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Лабораторные показатели</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #111520;
+    --surface2: #161c2a;
+    --border: #1e2840;
+    --accent: #00d4ff;
+    --accent2: #7b61ff;
+    --good: #00e676;
+    --warn: #ffab00;
+    --bad: #ff4d6d;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --grid: rgba(255,255,255,0.04);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+  
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Header */
+  .header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  
+  .blood-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--bad);
+    background: rgba(255,77,109,0.12);
+    border: 1px solid rgba(255,77,109,0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  
+  .subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Mobile Navigation */
+  .mobile-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: sticky;
+    top: 73px;
+    z-index: 99;
+  }
+  
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .nav-group-btn {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  
+  .nav-group-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  /* Main Content */
+  .main {
+    padding: 16px;
+    padding-bottom: calc(80px + var(--safe-bottom));
+  }
+
+  /* Indicator Cards Grid */
+  .indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .indicator-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .indicator-card:active {
+    transform: scale(0.98);
+  }
+  
+  .indicator-card.active {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+  
+  .indicator-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--dot-color, var(--muted));
+  }
+  
+  .ind-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .ind-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--value-color, var(--text));
+    margin-bottom: 2px;
+  }
+  
+  .ind-unit {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  
+  .ind-trend {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  /* Chart Section */
+  .chart-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .chart-header {
+    margin-bottom: 16px;
+  }
+  
+  .chart-title {
+    font-family: 'Dela Gothic One', sans-serif;
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  
+  .chart-subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 250px;
+    margin-bottom: 16px;
+  }
+  
+  .chart-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .stat-box {
+    text-align: center;
+  }
+  
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 8px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  
+  .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* Toggle */
+  .toggle-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .toggle-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .toggle-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+
+  /* Data Cards */
+  .data-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .data-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .data-card-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .data-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  
+  .data-status {
+    font-size: 11px;
+    font-weight: 500;
+  }
+  
+  .data-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(17, 21, 32, 0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px calc(12px + var(--safe-bottom));
+    display: flex;
+    justify-content: space-around;
+    z-index: 1000;
+  }
+  
+  .nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 12px;
+    transition: all 0.2s;
+  }
+  
+  .nav-btn.active {
+    color: var(--accent);
+  }
+  
+  .nav-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Colors */
+  .good { color: var(--good); }
+  .warn { color: var(--warn); }
+  .bad { color: var(--bad); }
+  .neutral { color: var(--accent); }
+
+  /* Hide scrollbar */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Desktop styles */
+  @media (min-width: 768px) {
+    .header {
+      padding: 32px 40px 20px;
+    }
+    
+    .title {
+      font-size: 28px;
+    }
+    
+    .mobile-nav {
+      display: none;
+    }
+    
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+    
+    .sidebar {
+      display: block;
+      border-right: 1px solid var(--border);
+      padding: 20px 0;
+      overflow-y: auto;
+      max-height: calc(100vh - 90px);
+      position: sticky;
+      top: 0;
+    }
+    
+    .main {
+      padding: 28px 32px;
+      padding-bottom: 28px;
+    }
+    
+    .indicators-grid {
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+    
+    .chart-container {
+      height: 400px;
+    }
+    
+    .bottom-nav {
+      display: none;
+    }
+  }
+  
+  /* Mobile only */
+  @media (max-width: 767px) {
+    .sidebar {
+      display: none;
+    }
+  }
+
+  /* Animations */
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .animate-in {
+    animation: slideUp 0.3s ease-out;
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <div>
+      <div class="title">Лабораторные показатели</div>
+      <div class="subtitle">2018 — 2026</div>
+    </div>
+    <div class="blood-type">0(I) Rh+</div>
+  </div>
+</header>
+
+<!-- Mobile Group Navigation -->
+<nav class="mobile-nav" id="mobileNav"></nav>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  
+  <main class="main" id="main">
+    <div class="indicators-grid" id="indicatorsGrid"></div>
+    <div class="chart-section" id="chartSection" style="display: none;"></div>
+    <div class="data-cards" id="dataCards"></div>
+  </main>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showView('grid')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    <span>Показатели</span>
+  </button>
+  <button class="nav-btn" onclick="showView('chart')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 3v18h18"/>
+      <path d="M18 17V9"/>
+      <path d="M13 17V5"/>
+      <path d="M8 17v-3"/>
+    </svg>
+    <span>График</span>
+  </button>
+  <button class="nav-btn" onclick="showView('table')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 6h18"/>
+      <path d="M3 12h18"/>
+      <path d="M3 18h18"/>
+    </svg>
+    <span>История</span>
+  </button>
+</nav>
+
+<script>
+// Data
+const RAW_DATES = [
+  "09.04.2018","06.06.2018","28.08.2018","20.12.2018","11.02.2019",
+  "16.09.2019","19.12.2019","03.03.2020","май.20","авг.20",
+  "02.10.2020","30.12.2020","04.01.2021","25.03.2021","22.07.2021",
+  "сент.21","янв.22","март.22","май.22","нояб.22",
+  "май.23","сент.23","февр.24","сент.24","дек.24",
+  "май.25","окт.25","фев.26"
+];
+
+const INDICATORS = [
+  { id:'hgb', name:'Гемоглобин', group:'Кровь', unit:'г/л', ref:{lo:130,hi:170},
+    values:[139,143,162,148,153,154,150,151,150,158,155,146,149,155,152,152,148,145,149,148,143,140,154,141,146,140,144,144] },
+  { id:'rbc', name:'Эритроциты', group:'Кровь', unit:'×10¹²/л', ref:{lo:4.0,hi:5.5},
+    values:[4.7,5.15,5.52,5,5.2,5.4,5.2,5.2,5.2,5.4,5.28,4.77,5.08,5.17,5.08,5.15,5.04,5.04,5.0,5,4.96,5.01,5.28,4.71,5.01,5.04,5.06,4.96] },
+  { id:'plt', name:'Тромбоциты', group:'Кровь', unit:'×10⁹/л', ref:{lo:150,hi:400},
+    values:[142,179,177,164,166,170,142,161,155,160,132,134,170,181,184,149,155,167,186,176,151,151,177,172,178,161,169,196] },
+  { id:'fib', name:'Фибриноген', group:'Кровь', unit:'г/л', ref:{lo:2.0,hi:4.0},
+    values:[null,null,null,null,null,null,null,null,3.6,4.6,3.45,3.5,null,3.66,null,null,3.6,3.4,3.5,null,null,3.24,null,null,3.2,3.67,null,3.67] },
+
+  { id:'glu', name:'Глюкоза', group:'Диабет', unit:'ммоль/л', ref:{lo:3.9,hi:6.1},
+    values:[9.98,null,7.85,6.8,7.3,6.39,null,6.5,6.94,8.05,null,null,null,8.7,9.94,10.13,8.27,8.18,8.89,null,8.03,8.93,null,8.29,8.95,7.42,10.37,9.42] },
+  { id:'hba1c', name:'HbA1c', group:'Диабет', unit:'%', ref:{lo:4.0,hi:6.5},
+    values:[9.3,7.7,6.7,6.8,7.3,7.1,6.9,6.9,7.3,7.2,7.6,null,null,8,7.8,7.7,7.5,7.5,7,7.7,6.8,7.9,7.7,7.9,7.7,7.9,8.2,8.3] },
+  { id:'ins', name:'Инсулин', group:'Диабет', unit:'мкЕд/мл', ref:{lo:2.6,hi:24.9},
+    values:[1.7,11.6,11.87,5.4,5.7,5.7,null,3.4,9.4,6.3,null,null,null,8.84,8.18,null,4.52,null,null,10.2,12.73,6.7,null,9.44,5.89,8.26,8.62,8.08] },
+  { id:'cpep', name:'С-пептид', group:'Диабет', unit:'нг/мл', ref:{lo:0.9,hi:7.1},
+    values:[1.4,3.1,3.08,3,1.99,2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2.96,null,null,null,null,null] },
+
+  { id:'chol', name:'Холестерин', group:'Липиды', unit:'ммоль/л', ref:{lo:null,hi:5.2},
+    values:[5.18,null,3.55,4.06,3.82,4.05,null,4.59,3.92,3.93,3.56,null,3.51,4.33,5.13,4.5,null,null,4.32,4.3,4.66,4.23,5.26,4.16,4.96,4.47,4.54,4.37] },
+  { id:'ldl', name:'ЛПНП', group:'Липиды', unit:'ммоль/л', ref:{lo:null,hi:3.0},
+    values:[null,null,2.56,null,2.7,0.85,null,3.23,2.54,2.84,3.13,null,2.27,3.19,3.53,3.11,null,null,2.8,2.9,3.18,3.17,3.9,2.97,3.5,3.15,3.02,3.13] },
+  { id:'hdl', name:'ЛПВП', group:'Липиды', unit:'ммоль/л', ref:{lo:1.0,hi:null},
+    values:[null,null,0.98,0.83,0.94,2.77,null,1.01,0.76,0.89,0.78,null,0.78,0.9,0.85,0.88,null,null,0.87,0.84,0.98,1.03,1.08,0.84,0.87,0.96,1.06,0.86] },
+  { id:'trig', name:'Триглицериды', group:'Липиды', unit:'ммоль/л', ref:{lo:null,hi:1.7},
+    values:[null,null,0.72,null,1.22,1.53,null,1.25,2.71,1.11,1.55,null,1.25,2.17,1.88,1.45,null,null,1.37,2.14,1.64,1.05,1.12,1.07,2.32,1.24,1.22,1.2] },
+
+  { id:'tsh', name:'ТТГ', group:'Щитовидка', unit:'мкМЕ/мл', ref:{lo:0.4,hi:4.0},
+    values:[1.68,1.82,1.67,0.77,0.9,1.1,null,1.3,1.31,1.45,1.92,null,null,1.39,1.92,null,null,1.26,null,1.4,1.99,1.49,1.35,1.28,1.71,1.5,1.84,1.15] },
+  { id:'t4', name:'Т4 свободный', group:'Щитовидка', unit:'пмоль/л', ref:{lo:9.0,hi:22.0},
+    values:[null,17.2,18.1,null,13.2,null,null,null,null,null,16.39,null,null,17.1,null,null,null,null,null,13.5,null,14.1,null,19,1.27,18,null,19.6] },
+
+  { id:'test', name:'Тестостерон', group:'Гормоны', unit:'нмоль/л', ref:{lo:8.0,hi:33.0},
+    values:[null,null,16.67,null,16.98,8.75,null,null,3.13,3.83,null,null,null,null,null,null,7.66,9.8,null,null,12.89,null,12.73,11.4,7.56,7.49,7.66,11.2] },
+  { id:'psa', name:'ПСА', group:'Гормоны', unit:'нг/мл', ref:{lo:null,hi:4.0},
+    values:[6.4,5.27,6.95,7.7,9.3,8.2,7.4,8.25,9.5,10.48,7.06,null,10.7,7.27,4.36,3.36,2.63,3.74,null,2.92,3.29,2.3,2.74,2.4,2.11,2.3,2.32,2.55] },
+  { id:'lh', name:'ЛГ', group:'Гормоны', unit:'мМЕ/мл', ref:{lo:1.7,hi:8.6},
+    values:[10.98,12.2,2.08,4.2,2.68,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,26.7,null,null,null,28] },
+  { id:'fsh', name:'ФСГ', group:'Гормоны', unit:'мМЕ/мл', ref:{lo:1.5,hi:12.4},
+    values:[31.9,28.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null] },
+
+  { id:'vitd', name:'Витамин D', group:'Витамины', unit:'нг/мл', ref:{lo:30,hi:100},
+    values:[null,null,100.2,83.6,85.9,71.6,null,97,95.2,82.4,89.6,null,282,93.98,51.3,null,45.57,81.9,null,54,78.45,49.1,68.69,48.4,50.53,64.39,51.95,84.44] },
+  { id:'b12', name:'Витамин B12', group:'Витамины', unit:'пг/мл', ref:{lo:197,hi:771},
+    values:[198,214,183.2,130,148,222,187,4736,255,235,276,null,261,284,180,654,301,481,null,177,388,403,572,379,546,353,439,707] },
+  { id:'b9', name:'Фолат B9', group:'Витамины', unit:'нмоль/л', ref:{lo:7.0,hi:45.3},
+    values:[null,23.2,null,41.3,14,21.9,null,108.5,94.2,36,8.36,null,null,null,null,11.28,null,14.58,null,4,null,5.8,8.42,13.4,6.75,11.5,5.77,19.4] },
+  { id:'omega3', name:'Омега-3', group:'Витамины', unit:'%', ref:{lo:8,hi:12},
+    values:[null,8.3,8.4,9.08,5.79,null,null,7.7,null,null,7.97,null,null,null,null,null,null,null,null,4.84,null,9.65,null,6.03,null,9.1,9.32,null] },
+  { id:'zinc', name:'Цинк', group:'Витамины', unit:'мкг/л', ref:{lo:650,hi:1100},
+    values:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,748,null,null,16,782,14.8,909] },
+
+  { id:'ferr', name:'Ферритин', group:'Железо', unit:'нг/мл', ref:{lo:20,hi:250},
+    values:[62,191,105.5,62,188.7,110,89,155,112,113,151,316.2,309,310,263.6,182.4,213,134.7,194.4,188,173,141,187,145.5,152.3,116.99,101.7,173] },
+  { id:'fe', name:'Железо', group:'Железо', unit:'мкмоль/л', ref:{lo:10.6,hi:28.3},
+    values:[null,null,15.22,13.25,17.3,17.13,12.14,15.75,9.68,14.3,10.1,11.73,11.1,15.62,13.78,null,10.9,10.2,14.4,11.3,11.35,13.01,14.65,11.89,11.24,9.63,10.7,16.43] },
+  { id:'crp', name:'СРБ', group:'Железо', unit:'мг/л', ref:{lo:null,hi:1.0},
+    values:[null,null,null,null,1.06,2,null,1.3,1.2,1.7,0.8,2.03,1.97,0.99,1.82,1.2,0.81,2.07,1.17,0.66,1.08,0.9,1.09,0.79,0.64,0.88,1.02,1.32] },
+  { id:'hom', name:'Гомоцистеин', group:'Железо', unit:'мкмоль/л', ref:{lo:5,hi:15},
+    values:[10.4,null,20.3,16.1,10.76,12.6,13.9,9.7,7.3,11.3,10.92,null,null,14.89,20,8.77,null,9.69,null,11.97,14.6,11.41,14.2,14.7,13.1,14.79,14.7,12.42] },
+
+  { id:'k', name:'Калий', group:'Электролиты', unit:'ммоль/л', ref:{lo:3.5,hi:5.1},
+    values:[null,null,4.99,4.2,null,4.1,null,4.5,4.2,4.3,4.4,6.1,null,null,4.17,null,null,4.42,4.5,null,null,4.49,null,4.4,4.68,4.29,4.35,4.19] },
+  { id:'na', name:'Натрий', group:'Электролиты', unit:'ммоль/л', ref:{lo:136,hi:145},
+    values:[null,null,140.84,138,null,138,null,140,137,139,136,138,null,null,140.92,null,null,140,142,null,null,141,null,140.3,142.92,138.9,140,144] },
+  { id:'cl', name:'Хлор', group:'Электролиты', unit:'ммоль/л', ref:{lo:98,hi:107},
+    values:[null,null,97.49,102,null,103,null,101,102,106,100,null,null,null,102.3,null,null,102,106.4,null,null,105,null,104.7,104.5,102,103.56,105.3] },
+  { id:'ca', name:'Кальций', group:'Электролиты', unit:'ммоль/л', ref:{lo:2.15,hi:2.55},
+    values:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,2.44,2.43,2.24,2.37,2.25,2.35,2.26] },
+];
+
+// State
+let activeId = 'hgb';
+let activeGroup = 'Кровь';
+let chartInst = null;
+let showRef = true;
+let currentView = 'grid';
+
+// Helpers
+function getColor(val, ref) {
+  if (val == null) return null;
+  if (ref.lo != null && val < ref.lo) return 'bad';
+  if (ref.hi != null && val > ref.hi) return 'bad';
+  const range = (ref.hi || 999) - (ref.lo || 0);
+  const mid = (ref.lo || 0) + range/2;
+  const dev = Math.abs(val - mid) / (range/2);
+  if (dev > 0.7) return 'warn';
+  return 'good';
+}
+
+function getLastValue(ind) {
+  const vals = ind.values.filter(v => v != null);
+  return vals.length ? vals[vals.length - 1] : null;
+}
+
+function getTrend(ind) {
+  const vals = ind.values.filter(v => v != null);
+  if (vals.length < 2) return 0;
+  return vals[vals.length - 1] - vals[vals.length - 2];
+}
+
+// Mobile Navigation
+function buildMobileNav() {
+  const groups = [...new Set(INDICATORS.map(i => i.group))];
+  const nav = document.getElementById('mobileNav');
+  nav.innerHTML = groups.map(g => 
+    `<button class="nav-group-btn ${g === activeGroup ? 'active' : ''}" onclick="setGroup('${g}')">${g}</button>`
+  ).join('');
+}
+
+function setGroup(group) {
+  activeGroup = group;
+  buildMobileNav();
+  buildIndicatorsGrid();
+}
+
+// Indicators Grid
+function buildIndicatorsGrid() {
+  const grid = document.getElementById('indicatorsGrid');
+  const filtered = INDICATORS.filter(i => i.group === activeGroup);
+  
+  grid.innerHTML = filtered.map(ind => {
+    const last = getLastValue(ind);
+    const trend = getTrend(ind);
+    const color = last != null ? getColor(last, ind.ref) : 'neutral';
+    const trendStr = trend > 0 ? '↑' : trend < 0 ? '↓' : '→';
+    const trendClass = trend > 0 ? 'bad' : trend < 0 ? 'good' : 'neutral';
+    
+    return `
+      <div class="indicator-card ${ind.id === activeId ? 'active' : ''} animate-in" 
+           style="--dot-color: var(--${color}); --value-color: var(--${color})"
+           onclick="selectIndicator('${ind.id}')">
+        <div class="ind-name">${ind.name}</div>
+        <div class="ind-value">${last != null ? last.toFixed(1) : '—'}</div>
+        <div class="ind-unit">${ind.unit}</div>
+        ${last != null ? `<div class="ind-trend ${trendClass}">${trendStr} ${Math.abs(trend).toFixed(1)}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function selectIndicator(id) {
+  activeId = id;
+  buildIndicatorsGrid();
+  if (currentView === 'grid') {
+    showView('chart');
+  } else {
+    renderChartView();
+    renderDataCards();
+  }
+}
+
+// Chart View
+function renderChartView() {
+  const ind = INDICATORS.find(i => i.id === activeId);
+  if (!ind) return;
+  
+  const pairs = RAW_DATES.map((d, i) => ({ date: d, val: ind.values[i] })).filter(p => p.val != null);
+  const vals = pairs.map(p => p.val);
+  const last = vals[vals.length - 1];
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  
+  const section = document.getElementById('chartSection');
+  section.innerHTML = `
+    <div class="chart-header">
+      <div class="chart-title">${ind.name}</div>
+      <div class="chart-subtitle">${ind.unit} • Норма: ${ind.ref.lo ?? '—'} – ${ind.ref.hi ?? '—'}</div>
+    </div>
+    <div class="toggle-container">
+      <button class="toggle-btn ${showRef ? 'active' : ''}" onclick="toggleRef()">Показывать нормы</button>
+    </div>
+    <div class="chart-container">
+      <canvas id="chartCanvas"></canvas>
+    </div>
+    <div class="chart-stats">
+      <div class="stat-box">
+        <div class="stat-label">Последнее</div>
+        <div class="stat-value ${getColor(last, ind.ref)}">${last.toFixed(1)}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Среднее</div>
+        <div class="stat-value neutral">${avg.toFixed(1)}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Мин</div>
+        <div class="stat-value good">${min.toFixed(1)}</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Макс</div>
+        <div class="stat-value warn">${max.toFixed(1)}</div>
+      </div>
+    </div>
+  `;
+  
+  requestAnimationFrame(() => drawChart(pairs, ind));
+}
+
+function drawChart(pairs, ind) {
+  if (chartInst) chartInst.destroy();
+  
+  const ctx = document.getElementById('chartCanvas')?.getContext('2d');
+  if (!ctx) return;
+  
+  const labels = pairs.map(p => p.date);
+  const data = pairs.map(p => p.val);
+  const colors = data.map(v => {
+    const c = getColor(v, ind.ref);
+    return c === 'good' ? '#00e676' : c === 'warn' ? '#ffab00' : '#ff4d6d';
+  });
+  
+  const datasets = [{
+    label: ind.name,
+    data,
+    borderColor: '#00d4ff',
+    backgroundColor: 'rgba(0,212,255,0.1)',
+    pointBackgroundColor: colors,
+    pointBorderColor: colors,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    borderWidth: 2,
+    tension: 0.4,
+    fill: true,
+  }];
+  
+  if (showRef && ind.ref.hi != null) {
+    datasets.push({
+      label: 'Max',
+      data: labels.map(() => ind.ref.hi),
+      borderColor: 'rgba(255,77,109,0.5)',
+      borderDash: [4,4],
+      borderWidth: 1,
+      pointRadius: 0,
+    });
+  }
+  if (showRef && ind.ref.lo != null) {
+    datasets.push({
+      label: 'Min',
+      data: labels.map(() => ind.ref.lo),
+      borderColor: 'rgba(0,230,118,0.5)',
+      borderDash: [4,4],
+      borderWidth: 1,
+      pointRadius: 0,
+    });
+  }
+  
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#161c2a',
+          borderColor: '#1e2840',
+          borderWidth: 1,
+          titleColor: '#00d4ff',
+          bodyColor: '#e8edf5',
+          padding: 10,
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y} ${ind.unit}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { 
+            color: '#6b7a99', 
+            font: { size: 9 },
+            maxRotation: 45,
+          },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        },
+        y: {
+          ticks: { color: '#6b7a99', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        }
+      }
+    }
+  });
+}
+
+function toggleRef() {
+  showRef = !showRef;
+  renderChartView();
+}
+
+// Data Cards
+function renderDataCards() {
+  const ind = INDICATORS.find(i => i.id === activeId);
+  if (!ind) return;
+  
+  const pairs = RAW_DATES.map((d, i) => ({ date: d, val: ind.values[i] })).filter(p => p.val != null);
+  
+  const container = document.getElementById('dataCards');
+  container.innerHTML = pairs.reverse().map((p, idx) => {
+    const color = getColor(p.val, ind.ref);
+    const status = { good: 'В норме', warn: 'Пограничное', bad: 'Вне нормы' }[color];
+    
+    return `
+      <div class="data-card animate-in" style="animation-delay: ${idx * 0.05}s">
+        <div class="data-card-left">
+          <div class="data-date">${p.date}</div>
+          <div class="data-status ${color}">${status}</div>
+        </div>
+        <div class="data-value ${color}">${p.val.toFixed(1)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// View Management
+function showView(view) {
+  currentView = view;
+  
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  event?.target?.classList.add('active');
+  
+  const grid = document.getElementById('indicatorsGrid');
+  const chart = document.getElementById('chartSection');
+  const table = document.getElementById('dataCards');
+  
+  grid.style.display = view === 'grid' ? 'grid' : 'none';
+  chart.style.display = view === 'chart' ? 'block' : 'none';
+  table.style.display = view === 'table' ? 'flex' : 'none';
+  
+  if (view === 'chart') renderChartView();
+  if (view === 'table') renderDataCards();
+}
+
+// Desktop Sidebar
+function buildSidebar() {
+  const groups = [...new Set(INDICATORS.map(i => i.group))];
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+  
+  sb.innerHTML = groups.map(g => `
+    <div class="sidebar-section">${g}</div>
+    ${INDICATORS.filter(i => i.group === g).map(ind => {
+      const last = getLastValue(ind);
+      const color = last != null ? getColor(last, ind.ref) : 'neutral';
+      return `
+        <button class="indicator-btn ${ind.id === activeId ? 'active' : ''}" onclick="selectIndicator('${ind.id}')">
+          <span class="dot" style="background: var(--${color})"></span>
+          ${ind.name}
+        </button>
+      `;
+    }).join('')}
+  `).join('');
+}
+
+// Init
+if (typeof Chart === 'undefined') {
+  document.body.innerHTML = '<div style="padding: 20px; color: #ff4d6d;">Ошибка загрузки. Проверьте интернет.</div>';
+} else {
+  buildMobileNav();
+  buildIndicatorsGrid();
+  buildSidebar();
+  renderChartView();
+  renderDataCards();
+}
+</script>
+
+</body>
+</html>'''
+
+# Save to file
+with open('/mnt/kimi/output/index_mobile.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("Файл сохранен: /mnt/kimi/output/index_mobile.html")
+print(f"Размер: {len(html_content)} символов")
